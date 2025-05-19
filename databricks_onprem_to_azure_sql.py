@@ -30,17 +30,21 @@ onprem_conn = pyodbc.connect(onprem_conn_str)
 # Create SQLAlchemy engine for Azure SQL
 azure_engine = create_engine(azure_conn_str, fast_executemany=True)
 
+chunksize = 10000  # Adjust chunk size as needed
+
 for schema, table in tables_to_transfer:
     query = f"SELECT * FROM [{schema}].[{table}]"
-    df = pd.read_sql(query, onprem_conn)
-    df.to_sql(
-        name=table,
-        con=azure_engine,
-        schema=schema,
-        if_exists='replace',
-        index=False
-    )
-    print(f"Transferred {schema}.{table} to Azure SQL.")
+    first_chunk = True
+    for chunk in pd.read_sql(query, onprem_conn, chunksize=chunksize):
+        chunk.to_sql(
+            name=table,
+            con=azure_engine,
+            schema=schema,
+            if_exists='replace' if first_chunk else 'append',
+            index=False
+        )
+        first_chunk = False
+        print(f"Transferred chunk of {schema}.{table} to Azure SQL.")
 
 onprem_conn.close()
 azure_engine.dispose()
