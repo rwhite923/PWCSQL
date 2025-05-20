@@ -2,13 +2,17 @@ import pyodbc
 import pandas as pd
 from sqlalchemy import create_engine
 
+# Securely fetch credentials using Databricks secrets
+username = dbutils.secrets.get(scope="netsuite-secrets", key="sv-sql-01-uname")
+password = dbutils.secrets.get(scope="netsuite-secrets", key="sv-sql-01-pword")
+
 # On-premises database connection details
 onprem_conn_str = (
-    "DRIVER={ODBC Driver 17 for SQL Server};"
-    "SERVER=ONPREM_SERVER;"
-    "DATABASE=ONPREM_DB;"
-    "UID=ONPREM_USER;"
-    "PWD=ONPREM_PASSWORD;"
+    f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+    f"SERVER=ONPREM_SERVER;"
+    f"DATABASE=ONPREM_DB;"
+    f"UID={username};"
+    f"PWD={password};"
 )
 
 # Azure SQL database connection details
